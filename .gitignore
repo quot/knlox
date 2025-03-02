@@ -1,0 +1,7 @@
+# Project Build
+*.kexe
+*.exe
+*.kexe.dSYM
+
+craftinginterpreters
+resources/dart-sdk
