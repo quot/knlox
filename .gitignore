@@ -3,5 +3,5 @@
 *.exe
 *.kexe.dSYM
 
-craftinginterpreters
-resources/dart-sdk
+# Build files
+dart-sdk/
