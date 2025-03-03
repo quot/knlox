@@ -6,7 +6,7 @@ NOCOLOR='\033[0m'
 run_requirements=("kotlinc-native" "make")
 
 path+=$(pwd)/resources/dart-sdk/bin
-dart --disable-analytics
+dart --disable-analytics > /dev/null
 
 typeset -A build_opts
 build_opts=(
@@ -15,6 +15,8 @@ build_opts=(
   [clean]=false
   [build_dir]="build/knlox"
   [bin_name]="bin"
+  [single_script]=false
+  [script_file]=""
 )
 
 # Parse command arguements
@@ -28,15 +30,17 @@ while (( "$#" )); do
       build_opts[build]=false
       shift
       ;;
-    # -p|--profiles)
-    #   if [ -n "$2" ] && [ ${2:0:1} != "-" ]; then
-    #     build_opts[profiles]=$2
-    #     shift 2
-    #   else
-    #     echo "Error: Argument for $1 is missing" >&2
-    #     exit 1
-    #   fi
-    #   ;;
+    -s|--script)
+      if [ -n "$2" ] && [ ${2:0:1} != "-" ]; then
+        build_opts[script_file]=$2
+        build_opts[single_script]=true
+        shift 2
+      else
+        echo "Error: Argument for $1 is missing" >&2
+        echo "$1 requires script location" >&2
+        exit 1
+      fi
+      ;;
     -*|--*=) # unsupported flags
       echo "Error: Unsupported flag $1" >&2
       exit 1
@@ -61,7 +65,7 @@ done
 if [[ $build_opts[clean] == true ]]; then
   echo "${BLUE}Cleaning project...${NOCOLOR}"
   rm -rf ./build
-  (cd ./craftinginterpreters; make clean && rm ./jlox)
+  (cd ./resources/craftinginterpreters && make clean)
 fi
 
 # Build knlox
@@ -75,14 +79,33 @@ elif ! [[ -e ./${build_opts[build_dir]}/${build_opts[bin_name]}.kexe ]]; then
 fi
 
 # Build refernce repo
-if [[ $build_opts[build] == true ]] && ! [[ -e ./craftinginterpreters/jlox ]]; then
+if [[ $build_opts[build] == true ]]; then
   echo "${BLUE}Building reference Lox project...${NOCOLOR}"
-  (cd ./craftinginterpreters && make get && make)
+  # (cd ./resources/craftinginterpreters && make get && make)
 fi
 
 if [[ $build_opts[run] == true ]]; then
-  echo "${BLUE}Running KNLox...${NOCOLOR}"
-  ./${build_opts[build_dir]}/${build_opts[bin_name]}.kexe
-  echo "${BLUE}Running JLox...${NOCOLOR}"
-  (cd ./craftinginterpreters && make test_jlox)
+  echo "${BLUE}Running Lox scripts...${NOCOLOR}"
+
+  knlox=./${build_opts[build_dir]}/${build_opts[bin_name]}.kexe
+  lox=./resources/craftinginterpreters/jlox
+
+  if [[ $build_opts[single_script] == true ]]; then
+    echo "\n${build_opts[script_file]}"
+    echo "\n${BLUE}KNLOX::${NOCOLOR}"
+    $knlox $build_opts[script_file]
+
+    echo "\n${BLUE}LOX::${NOCOLOR}"
+    $lox $build_opts[script_file]
+  else
+    echo "\n${BLUE}KNLOX::${NOCOLOR}"
+    find ./lox_scripts -print -name "*.lox" -exec $knlox {} \;
+
+    echo "\n${BLUE}LOX::${NOCOLOR}"
+    find ./lox_scripts -print -name "*.lox" -exec $lox {} \;
+  fi
+
+
+  # echo "${BLUE}Running JLox...${NOCOLOR}"
+  # (cd ./resources/craftinginterpreters && make test_jlox)
 fi
