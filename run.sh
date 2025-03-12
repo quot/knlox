@@ -72,7 +72,12 @@ fi
 if [[ $build_opts[build] == true ]]; then
   echo "${BLUE}Building KNLox...${NOCOLOR}"
   mkdir -p ./${build_opts[build_dir]}
-  kotlinc-native main.kt -o ${build_opts[build_dir]}/${build_opts[bin_name]}
+  kotlinc-native src -o ${build_opts[build_dir]}/${build_opts[bin_name]}
+
+  if [[ $? != 0 ]]; then
+    echo "${BLUE}\nBUILD FAILED. Stopping...${NOCOLOR}"
+    exit 1
+  fi
 elif ! [[ -e ./${build_opts[build_dir]}/${build_opts[bin_name]}.kexe ]]; then
   echo "Build skipped and ./${build_opts[build_dir]}/${build_opts[bin_name]}.kexe does not exist!"
   exit 1

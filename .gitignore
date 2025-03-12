@@ -4,4 +4,5 @@
 *.kexe.dSYM
 
 # Build files
+craftinginterpreters/
 dart-sdk/
